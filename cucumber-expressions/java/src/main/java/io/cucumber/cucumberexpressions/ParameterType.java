@@ -27,8 +27,20 @@ public final class ParameterType<T> implements Comparable<ParameterType<?>> {
         this.preferForRegexpMatch = preferForRegexpMatch;
     }
 
+    public ParameterType(String name, List<String> regexps, Type type, Function<String, T> transformer, boolean useForSnippets, boolean preferForRegexpMatch) {
+        this(name, regexps, type, new SingleTransformer<>(transformer), useForSnippets, preferForRegexpMatch);
+    }
+
+    public ParameterType(String name, String regexp, Class<T> type, Function<String, T> transformer, boolean useForSnippets, boolean preferForRegexpMatch) {
+        this(name, singletonList(regexp), type, transformer, useForSnippets, preferForRegexpMatch);
+    }
+
     public ParameterType(String name, String regexp, Class<T> type, ParameterTransformer<T> transformer, boolean useForSnippets, boolean preferForRegexpMatch) {
         this(name, singletonList(regexp), type, transformer, useForSnippets, preferForRegexpMatch);
+    }
+
+    public ParameterType(String name, String regexp, Class<T> type, Function<String, T> transformer) {
+        this(name, singletonList(regexp), type, transformer, true, false);
     }
 
     public ParameterType(String name, String regexp, Class<T> type, ParameterTransformer<T> transformer) {
