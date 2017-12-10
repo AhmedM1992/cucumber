@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 
-public final class DataTableType<T> implements Comparable<DataTableType<?>> {
+public class DataTableType implements Comparable<DataTableType> {
 
     private static final ConversionRequired CONVERSION_REQUIRED = new ConversionRequired();
 
     private final String name;
     private final Type type;
-    private final RawTableTransformer<T> transformer;
+    private final RawTableTransformer<?> transformer;
 
-    public DataTableType(String name, Type type, RawTableTransformer<T> transformer) {
+    public <T> DataTableType(String name, Type type, RawTableTransformer<T> transformer) {
         if (name == null) throw new CucumberDataTableException("name cannot be null");
         if (type == null) throw new CucumberDataTableException("type cannot be null");
         if (transformer == null) throw new CucumberDataTableException("transformer cannot be null");
@@ -24,7 +24,7 @@ public final class DataTableType<T> implements Comparable<DataTableType<?>> {
         this.transformer = transformer;
     }
 
-    public DataTableType(String name, Type type, final TableTransformer<T> transformer) {
+    public <T> DataTableType(String name, Type type, final TableTransformer<T> transformer) {
         this(name, type, new RawTableTransformer<T>() {
             @Override
             public T transform(List<List<String>> raw) {
@@ -33,30 +33,8 @@ public final class DataTableType<T> implements Comparable<DataTableType<?>> {
         });
     }
 
-    public T transform(List<List<String>> raw) {
-        return transformer.transform(raw);
-    }
-
-    public int compareTo(DataTableType<?> o) {
-        return name.compareTo(o.name);
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
-
-    public Type getType() {
-        return type;
-    }
-
-    public static <T> DataTableType<T> tableAs(String name, Type type, final TableTransformer<T> transformer) {
-        return new DataTableType<>(name, type, transformer);
-    }
-
-    public static <T> DataTableType<List<T>> tableOf(String name, Type type, final TableRowTransformer<T> transformer) {
-        return new DataTableType<>(name, aListOf(type), new TableTransformer<List<T>>() {
+    public <T> DataTableType(String name, final Type type, final TableRowTransformer<T> transformer) {
+        this(name, aListOf(type), new TableTransformer<List<T>>() {
             @Override
             public List<T> transform(DataTable table) {
                 List<T> list = new ArrayList<>();
@@ -68,6 +46,24 @@ public final class DataTableType<T> implements Comparable<DataTableType<?>> {
                 return list;
             }
         });
+    }
+
+    public Object transform(List<List<String>> raw) {
+        return transformer.transform(raw);
+    }
+
+    public int compareTo(DataTableType o) {
+        return name.compareTo(o.name);
+    }
+
+
+    public String getName() {
+        return name;
+    }
+
+
+    public Type getType() {
+        return type;
     }
 
     public static Type aListOf(final Type type) {

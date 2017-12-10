@@ -38,9 +38,9 @@ public final class TypeRegistryTableConverter implements io.cucumber.datatable.T
             dataTable = dataTable.transpose();
         }
 
-        DataTableType<T> tableType = registry.lookupTableTypeByType(type);
+        DataTableType tableType = registry.lookupTableTypeByType(type);
         if (tableType != null) {
-            return tableType.transform(dataTable.cells());
+            return (T) tableType.transform(dataTable.cells());
         }
 
         if (type.equals(DataTable.class)) {
@@ -84,9 +84,9 @@ public final class TypeRegistryTableConverter implements io.cucumber.datatable.T
         if (itemType == null) throw new CucumberExpressionException("itemType may not be null");
 
 
-        DataTableType<List<T>> tableType = registry.lookupTableTypeByType(aListOf(itemType));
+        DataTableType tableType = registry.lookupTableTypeByType(aListOf(itemType));
         if (tableType != null) {
-            return unmodifiableList(tableType.transform(dataTable.cells()));
+            return unmodifiableList((List<T>) tableType.transform(dataTable.cells()));
         }
 
         ParameterType<T> parameterType = registry.lookupParameterTypeByType(itemType);

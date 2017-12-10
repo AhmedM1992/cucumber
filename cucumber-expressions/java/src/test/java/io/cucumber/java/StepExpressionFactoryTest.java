@@ -2,6 +2,7 @@ package io.cucumber.java;
 
 import io.cucumber.cucumberexpressions.Argument;
 import io.cucumber.cucumberexpressions.ParameterType;
+import io.cucumber.datatable.DataTableType;
 import io.cucumber.datatable.TableRowTransformer;
 import io.cucumber.datatable.TableTransformer;
 import io.cucumber.datatable.DataTable;
@@ -9,13 +10,10 @@ import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static io.cucumber.datatable.DataTableType.tableAs;
-import static io.cucumber.datatable.DataTableType.tableOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -78,7 +76,7 @@ public class StepExpressionFactoryTest {
 
     @Test
     public void table_expression_with_name_creates_single_ingredients_from_table() {
-        registry.defineDataTableType(tableAs("ingredient", Ingredient.class, beanMapper(registry)));
+        registry.defineDataTableType(new DataTableType("ingredient", Ingredient.class, beanMapper(registry)));
 
         StepExpression expression = new StepExpressionFactory(registry).createExpression("Given some stuff:", "ingredient");
 
@@ -91,7 +89,7 @@ public class StepExpressionFactoryTest {
     @Test
     public void table_expression_with_type_creates_single_ingredients_from_table() {
 
-        registry.defineDataTableType(tableAs("ingredient", Ingredient.class, beanMapper(registry)));
+        registry.defineDataTableType(new DataTableType("ingredient", Ingredient.class, beanMapper(registry)));
         StepExpression expression = new StepExpressionFactory(registry).createExpression("Given some stuff:", Ingredient.class);
         List<Argument<?>> match = expression.match("Given some stuff:", tableTransposed);
 
@@ -104,7 +102,7 @@ public class StepExpressionFactoryTest {
     @Test
     public void table_expression_with_name_creates_list_of_ingredients_from_table() {
 
-        registry.defineDataTableType(tableOf("ingredients", Ingredient.class, listBeanMapper(registry)));
+        registry.defineDataTableType(new DataTableType("ingredients", Ingredient.class, listBeanMapper(registry)));
         StepExpression expression = new StepExpressionFactory(registry).createExpression("Given some stuff:", "ingredients");
 
         List<Argument<?>> match = expression.match("Given some stuff:", table);
@@ -118,7 +116,7 @@ public class StepExpressionFactoryTest {
     @Test
     public void table_expression_with_list_type_creates_list_of_ingredients_from_table() {
 
-        registry.defineDataTableType(tableOf("ingredients", Ingredient.class, listBeanMapper(registry)));
+        registry.defineDataTableType(new DataTableType("ingredients", Ingredient.class, listBeanMapper(registry)));
 
         StepExpression expression = new StepExpressionFactory(registry).createExpression("Given some stuff:", getTypeFromStepDefinition());
         List<Argument<?>> match = expression.match("Given some stuff:", table);

@@ -116,6 +116,7 @@ public final class ParameterTypeRegistry {
 
     public <T> ParameterType<T> lookupByType(Type type) {
         // TODO: Disamiguation
+        // TODO: Check against rexexp
         return (ParameterType<T>) parameterTypeByType.get(type);
     }
 

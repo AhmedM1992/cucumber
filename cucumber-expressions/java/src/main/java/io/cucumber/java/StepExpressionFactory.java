@@ -65,8 +65,13 @@ public final class StepExpressionFactory {
 
         DocStringTransformer<?> docStringTransform = new DocStringTransformer<Object>() {
             @Override
-            public Object transform(String input) {
-                return registry.lookupParameterTypeByType(tableOrDocStringType);
+            public Object transform(String raw) {
+                ParameterType<Object> type = registry.lookupParameterTypeByType(tableOrDocStringType);
+                if (type == null) {
+                    //TODO:
+                    throw new UnsupportedOperationException();
+                }
+                return type.transform(Collections.singletonList(raw));
             }
         };
         return new StepExpression(expression, docStringTransform, tableTransform);
@@ -81,7 +86,7 @@ public final class StepExpressionFactory {
         RawTableTransformer<?> tableTransform = new RawTableTransformer<Object>() {
             @Override
             public Object transform(List<List<String>> raw) {
-                DataTableType<?> type = registry.lookupTableTypeByName(tableOrDocStringType);
+                DataTableType type = registry.lookupTableTypeByName(tableOrDocStringType);
                 if (type == null) {
                     throw new UndefinedTableTypeException(tableOrDocStringType);
                 }

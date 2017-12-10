@@ -9,7 +9,6 @@ import io.cucumber.datatable.RawTableTransformer;
 import io.cucumber.datatable.TableConverter;
 import io.cucumber.datatable.TableRowTransformer;
 import io.cucumber.cucumberexpressions.TypeReference;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static io.cucumber.datatable.DataTableType.tableOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -115,7 +113,7 @@ public class TypeRegistryTableConverterTest {
             }
         })));
 
-        registry.defineDataTableType(tableOf("animal", Animal.class, new TableRowTransformer<Animal>() {
+        final TableRowTransformer<Animal> transformer = new TableRowTransformer<Animal>() {
 
             @Override
             public Animal transform(Map<String, String> values) {
@@ -123,7 +121,8 @@ public class TypeRegistryTableConverterTest {
 
                 return new Animal(values.get("name"), parameterType.transform(singletonList(values.get("life expectancy"))));
             }
-        }));
+        };
+        registry.defineDataTableType(new DataTableType("animal", Animal.class, transformer));
 
         DataTable table = new DataTable(asList(
                 asList("name", "life expectancy"),
@@ -140,7 +139,7 @@ public class TypeRegistryTableConverterTest {
     public void when_converting_to_data_table_table_type_takes_precedence_over_item_type() {
         final DataTable expected = new DataTable(Collections.<List<String>>emptyList());
 
-        registry.defineDataTableType(new DataTableType<>("table", DataTable.class, new RawTableTransformer<DataTable>() {
+        registry.defineDataTableType(new DataTableType("table", DataTable.class, new RawTableTransformer<DataTable>() {
             @Override
             public DataTable transform(List<List<String>> raw) {
                 return expected;
@@ -160,12 +159,13 @@ public class TypeRegistryTableConverterTest {
         Type barnAnimalType = new TypeReference<Barn<Animal>>() {}.getType();
         Type listOfbarnAnimalType = new TypeReference<List<Barn<Animal>>>() {}.getType();
 
-        registry.defineDataTableType(tableOf("muffalo-barn", barnAnimalType, new TableRowTransformer<Barn>() {
+        final TableRowTransformer<Barn<Animal>> transformer = new TableRowTransformer<Barn<Animal>>() {
             @Override
-            public Barn transform(Map<String, String> row) {
+            public Barn<Animal> transform(Map<String, String> row) {
                 return new Barn<>(new Animal("Muffalo", 15));
             }
-        }));
+        };
+        registry.defineDataTableType(new DataTableType("muffalo-barn", barnAnimalType, transformer));
 
         DataTable table = new DataTable(asList(
                 asList("name", "life expectancy"),
