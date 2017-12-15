@@ -15,7 +15,7 @@ public class DataTableType implements Comparable<DataTableType> {
     private final Type type;
     private final RawTableTransformer<?> transformer;
 
-    public <T> DataTableType(String name, Type type, RawTableTransformer<T> transformer) {
+    private <T> DataTableType(String name, Type type, RawTableTransformer<T> transformer) {
         if (name == null) throw new CucumberDataTableException("name cannot be null");
         if (type == null) throw new CucumberDataTableException("type cannot be null");
         if (transformer == null) throw new CucumberDataTableException("transformer cannot be null");
@@ -24,7 +24,12 @@ public class DataTableType implements Comparable<DataTableType> {
         this.transformer = transformer;
     }
 
-    public <T> DataTableType(String name, Type type, final TableTransformer<T> transformer) {
+    public <T> DataTableType(String name, Class<T> type, RawTableTransformer<T> transformer) {
+        this(name, (Type) type, transformer);
+    }
+
+
+    public <T> DataTableType(String name, Class<T> type, final TableTransformer<T> transformer) {
         this(name, type, new RawTableTransformer<T>() {
             @Override
             public T transform(List<List<String>> raw) {
@@ -33,12 +38,12 @@ public class DataTableType implements Comparable<DataTableType> {
         });
     }
 
-    public <T> DataTableType(String name, final Type type, final TableRowTransformer<T> transformer) {
-        this(name, aListOf(type), new TableTransformer<List<T>>() {
+    public <T> DataTableType(String name, final Class<T> type, final TableRowTransformer<T> transformer) {
+        this(name, aListOf(type), new RawTableTransformer<List<T>>() {
             @Override
-            public List<T> transform(DataTable table) {
+            public List<T> transform(List<List<String>> raw) {
+                DataTable table = new DataTable(raw, CONVERSION_REQUIRED);
                 List<T> list = new ArrayList<>();
-
                 for (Map<String, String> tableRow : table.asMaps()) {
                     list.add(transformer.transform(tableRow));
                 }

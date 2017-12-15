@@ -4,7 +4,6 @@ import io.cucumber.cucumberexpressions.CucumberExpressionException;
 import io.cucumber.datatable.DataTableType;
 import io.cucumber.cucumberexpressions.ParameterType;
 import io.cucumber.datatable.DataTable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -197,7 +196,7 @@ public final class TypeRegistryTableConverter implements io.cucumber.datatable.T
 
     @Override
     public DataTable toTable(List<?> objects, String... columnNames) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException("TODO");
     }
 
 }
