@@ -1,5 +1,8 @@
 package io.cucumber.cucumberexpressions;
 
+import io.cucumber.cucumberexpressions.AmbiguousParameterTypeException.AmbiguousRegularExpressionException;
+import io.cucumber.cucumberexpressions.AmbiguousParameterTypeException.AmbiguousTypeException;
+
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -19,7 +22,7 @@ public final class ParameterTypeRegistry {
 
     private final Map<String, ParameterType<?>> parameterTypeByName = new HashMap<>();
     private final Map<String, SortedSet<ParameterType<?>>> parameterTypesByRegexp = new HashMap<>();
-    private final Map<Type, ParameterType<?>> parameterTypeByType = new HashMap<>(); //TODO: Should be Map<Type, List<ParameterType<?>>
+    private final Map<Type, SortedSet<ParameterType<?>>> parameterTypeByType = new HashMap<>();
 
     public ParameterTypeRegistry(Locale locale) {
         NumberFormat numberFormat = NumberFormat.getNumberInstance(locale);
@@ -92,10 +95,14 @@ public final class ParameterTypeRegistry {
         if (parameterTypeByName.containsKey(parameterType.getName()))
             throw new DuplicateTypeNameException(String.format("There is already a parameter type with name %s", parameterType.getName()));
         parameterTypeByName.put(parameterType.getName(), parameterType);
-        parameterTypeByType.put(parameterType.getType(), parameterType);
+
+        if (!parameterTypeByType.containsKey(parameterType.getType())) {
+            parameterTypeByType.put(parameterType.getType(), new TreeSet<ParameterType<?>>());
+        }
+        parameterTypeByType.get(parameterType.getType()).add(parameterType);
 
         for (String parameterTypeRegexp : parameterType.getRegexps()) {
-            if (parameterTypesByRegexp.get(parameterTypeRegexp) == null) {
+            if (!parameterTypesByRegexp.containsKey(parameterTypeRegexp)) {
                 parameterTypesByRegexp.put(parameterTypeRegexp, new TreeSet<ParameterType<?>>());
             }
             SortedSet<ParameterType<?>> parameterTypes = parameterTypesByRegexp.get(parameterTypeRegexp);
@@ -110,14 +117,24 @@ public final class ParameterTypeRegistry {
         }
     }
 
-    public <T> ParameterType<T> lookupByTypeName(String typeName) {
+    public <T> ParameterType<T> lookupByName(String typeName) {
         return (ParameterType<T>) parameterTypeByName.get(typeName);
     }
 
     public <T> ParameterType<T> lookupByType(Type type) {
-        // TODO: Disamiguation
-        // TODO: Check against rexexp
-        return (ParameterType<T>) parameterTypeByType.get(type);
+        SortedSet<ParameterType<?>> parameterTypes = parameterTypeByType.get(type);
+        if (parameterTypes == null) return null;
+
+        List<ParameterType<?>> matched = new ArrayList<>();
+
+        if (parameterTypes.size() > 1) {
+            // We don't do this check on insertion because we only want to restrict
+            // ambiguity when we look up by Regexp. Users of CucumberExpression should
+            // not be restricted.
+            throw new AmbiguousTypeException(type, parameterTypes);
+        }
+
+        return (ParameterType<T>) parameterTypes.first();
     }
 
     public <T> ParameterType<T> lookupByRegexp(String parameterTypeRegexp, Pattern expressionRegexp, String text) {
@@ -128,7 +145,7 @@ public final class ParameterTypeRegistry {
             // ambiguity when we look up by Regexp. Users of CucumberExpression should
             // not be restricted.
             List<GeneratedExpression> generatedExpressions = new CucumberExpressionGenerator(this).generateExpressions(text);
-            throw new AmbiguousParameterTypeException(parameterTypeRegexp, expressionRegexp, parameterTypes, generatedExpressions);
+            throw new AmbiguousRegularExpressionException(parameterTypeRegexp, expressionRegexp, parameterTypes, generatedExpressions);
         }
         return (ParameterType<T>) parameterTypes.first();
     }

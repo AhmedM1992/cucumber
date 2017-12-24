@@ -1,37 +1,84 @@
 package io.cucumber.cucumberexpressions;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
 
-public class AmbiguousParameterTypeException extends CucumberExpressionException {
-    private final Pattern regexp;
-    private final String parameterTypeRegexp;
-    private final SortedSet<ParameterType<?>> parameterTypes;
-    private final List<GeneratedExpression> generatedExpressions;
+public abstract class AmbiguousParameterTypeException {
 
-    public AmbiguousParameterTypeException(String parameterTypeRegexp, Pattern expressionRegexp, SortedSet<ParameterType<?>> parameterTypes, List<GeneratedExpression> generatedExpressions) {
-        super(String.format("Your Regular Expression /%s/\n" +
-                        "matches multiple parameter types with regexp /%s/:\n" +
-                        "   %s\n" +
-                        "\n" +
-                        "I couldn't decide which one to use. You have two options:\n" +
-                        "\n" +
-                        "1) Use a Cucumber Expression instead of a Regular Expression. Try one of these:\n" +
-                        "   %s\n" +
-                        "\n" +
-                        "2) Make one of the parameter types preferential and continue to use a Regular Expression.\n" +
-                        "\n",
-                expressionRegexp.pattern(),
-                parameterTypeRegexp,
-                parameterTypeNames(parameterTypes),
-                expressions(generatedExpressions)
-        ));
-        this.regexp = expressionRegexp;
-        this.parameterTypeRegexp = parameterTypeRegexp;
-        this.parameterTypes = parameterTypes;
-        this.generatedExpressions = generatedExpressions;
+    public static final class AmbiguousTypeException extends CucumberExpressionException {
+        private final Type type;
+        private final SortedSet<ParameterType<?>> parameterTypes;
+
+        AmbiguousTypeException(Type type, SortedSet<ParameterType<?>> parameterTypes) {
+            super(String.format("There are multiple parameter types for %s:\n" +
+                            "   %s\n" +
+                            "\n" +
+                            "I couldn't decide which one to use. You have two options:\n" +
+                            "\n" +
+                            "1) Use a single parameter type instead of multiple and combine their regular expressions.\n" +
+                            "\n" +
+                            "2) Create a wrapper for %s to make the difference explicit.\n",
+                    type,
+                    parameterTypeNames(parameterTypes),
+                    type
+            ));
+
+            this.type = type;
+            this.parameterTypes = parameterTypes;
+        }
+    }
+
+    public static final class AmbiguousRegularExpressionException extends CucumberExpressionException {
+        private final Pattern regexp;
+        private final String parameterTypeRegexp;
+        private final SortedSet<ParameterType<?>> parameterTypes;
+        private final List<GeneratedExpression> generatedExpressions;
+
+        AmbiguousRegularExpressionException(String parameterTypeRegexp, Pattern expressionRegexp, SortedSet<ParameterType<?>> parameterTypes, List<GeneratedExpression> generatedExpressions) {
+            super(String.format("Your Regular Expression /%s/\n" +
+                            "matches multiple parameter types with regexp /%s/:\n" +
+                            "   %s\n" +
+                            "\n" +
+                            "I couldn't decide which one to use. You have two options:\n" +
+                            "\n" +
+                            "1) Use a Cucumber Expression instead of a Regular Expression. Try one of these:\n" +
+                            "   %s\n" +
+                            "\n" +
+                            "2) Make one of the parameter types preferential and continue to use a Regular Expression.\n" +
+                            "\n",
+                    expressionRegexp.pattern(),
+                    parameterTypeRegexp,
+                    parameterTypeNames(parameterTypes),
+                    expressions(generatedExpressions)
+            ));
+            this.regexp = expressionRegexp;
+            this.parameterTypeRegexp = parameterTypeRegexp;
+            this.parameterTypes = parameterTypes;
+            this.generatedExpressions = generatedExpressions;
+        }
+
+
+        public Pattern getRegexp() {
+            return regexp;
+        }
+
+        public String getParameterTypeRegexp() {
+            return parameterTypeRegexp;
+        }
+
+        public SortedSet<ParameterType<?>> getParameterTypes() {
+            return parameterTypes;
+        }
+
+        public List<GeneratedExpression> getGeneratedExpressions() {
+            return generatedExpressions;
+        }
+    }
+
+    private AmbiguousParameterTypeException() {
     }
 
     private static String parameterTypeNames(SortedSet<ParameterType<?>> parameterTypes) {
@@ -53,11 +100,11 @@ public class AmbiguousParameterTypeException extends CucumberExpressionException
         return join(sources);
     }
 
-    private static String join(List<String> strings){
+    private static String join(List<String> strings) {
         StringBuilder builder = new StringBuilder();
         boolean first = true;
-        for(String element : strings){
-            if(first){
+        for (String element : strings) {
+            if (first) {
                 first = false;
             } else {
                 builder.append("\n   ");
@@ -66,21 +113,5 @@ public class AmbiguousParameterTypeException extends CucumberExpressionException
         }
 
         return builder.toString();
-    }
-
-    public Pattern getRegexp() {
-        return regexp;
-    }
-
-    public String getParameterTypeRegexp() {
-        return parameterTypeRegexp;
-    }
-
-    public SortedSet<ParameterType<?>> getParameterTypes() {
-        return parameterTypes;
-    }
-
-    public List<GeneratedExpression> getGeneratedExpressions() {
-        return generatedExpressions;
     }
 }

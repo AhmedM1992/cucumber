@@ -33,7 +33,7 @@ public class CucumberExpression implements Expression {
         regexp.append("^");
         while (matcher.find()) {
             String typeName = matcher.group(1);
-            ParameterType<?> parameterType = parameterTypeRegistry.lookupByTypeName(typeName);
+            ParameterType<?> parameterType = parameterTypeRegistry.lookupByName(typeName);
             if (parameterType == null) {
                 throw new UndefinedParameterTypeException(typeName);
             }

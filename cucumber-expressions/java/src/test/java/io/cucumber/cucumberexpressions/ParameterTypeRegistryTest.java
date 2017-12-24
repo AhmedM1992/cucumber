@@ -1,5 +1,7 @@
 package io.cucumber.cucumberexpressions;
 
+import io.cucumber.cucumberexpressions.AmbiguousParameterTypeException.AmbiguousRegularExpressionException;
+import io.cucumber.cucumberexpressions.AmbiguousParameterTypeException.AmbiguousTypeException;
 import org.junit.Test;
 
 import java.util.Locale;
@@ -9,20 +11,21 @@ import static org.junit.Assert.*;
 
 public class ParameterTypeRegistryTest {
 
-    public static final String CAPITALISED_WORD = "[A-Z]+\\w+";
+    private static final String CAPITALISED_WORD = "[A-Z]+\\w+";
+    private static final String TITLE_NAME = "Sir|Madam " + CAPITALISED_WORD;
 
-    public static class Name {
-        public Name(String s) {
+    static class Name {
+        Name(String s) {
         }
     }
 
-    public static class Person {
-        public Person(String s) {
+    static class Person {
+        Person(String s) {
         }
     }
 
-    public static class Place {
-        public Place(String s) {
+    static class Place {
+        Place(String s) {
         }
     }
 
@@ -107,7 +110,7 @@ public class ParameterTypeRegistryTest {
         try {
             registry.lookupByRegexp(CAPITALISED_WORD, Pattern.compile("([A-Z]+\\w+) and ([A-Z]+\\w+)"), "Lisa and Bob");
             fail("Expected an exception");
-        } catch (AmbiguousParameterTypeException e) {
+        } catch (AmbiguousRegularExpressionException e) {
             String expected = "" +
                     "Your Regular Expression /([A-Z]+\\w+) and ([A-Z]+\\w+)/\n" +
                     "matches multiple parameter types with regexp /[A-Z]+\\w+/:\n" +
@@ -133,4 +136,41 @@ public class ParameterTypeRegistryTest {
             assertEquals(expected, e.getMessage());
         }
     }
+
+    @Test
+    public void throws_ambiguous_exception_on_lookup() {
+        ParameterType<Name> name = new ParameterType<>("name", CAPITALISED_WORD, Name.class, new SingleTransformer<>(new Function<String, Name>() {
+            @Override
+            public Name apply(String s) {
+                return new Name(s);
+            }
+        }), true, false);
+        ParameterType<Name> title = new ParameterType<>("title", TITLE_NAME, Name.class, new SingleTransformer<>(new Function<String, Name>() {
+            @Override
+            public Name apply(String s) {
+                return new Name(s);
+            }
+        }), true, false);
+
+        registry.defineParameterType(name);
+        registry.defineParameterType(title);
+
+        try {
+            registry.lookupByType(Name.class);
+            fail("Expected an exception");
+        } catch (AmbiguousTypeException e) {
+            String expected = "" +
+                    "There are multiple parameter types for class io.cucumber.cucumberexpressions.ParameterTypeRegistryTest$Name:\n" +
+                    "   {name}\n" +
+                    "   {title}\n" +
+                    "\n" +
+                    "I couldn't decide which one to use. You have two options:\n" +
+                    "\n" +
+                    "1) Use a single parameter type instead of multiple and combine their regular expressions.\n" +
+                    "\n" +
+                    "2) Create a wrapper for class io.cucumber.cucumberexpressions.ParameterTypeRegistryTest$Name to make the difference explicit.\n";
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
 }
